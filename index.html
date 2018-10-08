@@ -8,24 +8,60 @@
 
     <link rel="stylesheet" type="text/css" href="assets/stylesheets/reset.css">
     <link rel="stylesheet" type="text/css" href="assets/stylesheets/main.css">
+
+    <link href="https://fonts.googleapis.com/css?family=Bevan|Roboto" rel="stylesheet">
 </head>
 <body>
     <div class="wrapper">
         <div class="title">
             <h1>Trivia!</h1>
         </div>
-
-        
     
         <div id='game-display'>
-            <button id="start-game">Start</button>
+            <div class="hidden" id="end-game"></div>
 
             <div class="hidden" id="score">
                 <h5>Correct: <span id="correct-answers">0</span></h5>
                 <h5>Wrong: <span id="wrong-answers">0</span></h5>
                 <h5>Unanswered: <span id="questions-unanswered">0</span></h5>
-                <h5>Left: <span id="questions-left"></span></h5>
             </div>
+
+            <div class="parameter-selection" id="parameter-selection">
+                <div class="difficulty-option">
+                    <label for="difficulty">Select Difficulty:</label>
+                    <select id="difficulty-select" name="difficulty">
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+
+                
+                <div class="category-option">
+                    <label for="category">Select Category: </label>
+                    <select name="category" id="category-select">
+                        <option value="0" aria-selected="true">All</option>
+                        <option value="9">General Knowledge</option>
+                        <option value="10">Books</option>
+                        <option value="11">Film</option>
+                        <option value="12">Music</option>
+                        <option value="13">Musicals & Theatre</option>
+                        <option value="14">Television</option>
+                        <option value="15">Video Games</option>
+                        <option value="16">Board Games</option>
+                        <option value="17">Science & Nature</option>
+                        <option value="18">Computers</option>
+                        <option value="19">Mathematics</option>
+                        <option value="20">Mythology</option>
+                    </select>
+                </div>
+                
+
+                <button id="start-game">Start</button>
+            </div>
+
+            <div class="user-correct hidden" id="user-correct"></div>
+            
         </div>
 
     </div>  

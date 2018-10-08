@@ -1,21 +1,27 @@
 const gameDisplay = document.getElementById('game-display');
+const parameterSelection = document.getElementById('parameter-selection');
+const userCorrectDisplay = document.getElementById('user-correct');
+const endGameDisplay = document.getElementById('end-game');
+
 const startGameButton = document.getElementById('start-game');
+const difficultySelector = document.getElementById('difficulty-select');
+const categorySelector = document.getElementById('category-select');
 const answerButton = document.getElementsByClassName('answer');
 
 const scoreElement = document.getElementById('score');
 const correctAnswersText = document.getElementById('correct-answers');
 const wrongAnswersText = document.getElementById('wrong-answers');
 const questionsUnansweredText = document.getElementById('questions-unanswered');
-const questionsLeftText = document.getElementById('questions-left');
 
 let questions = [];
 let correctAnswers = 0,
 wrongAnswers = 0,
 questionsUnanswered = 0,
 questionsRemaining = 0;
+let currentCorrectAnswer;
 let gameStarted = false;
 let questionTimer;
-const questionTime = 20;
+const questionTime = 15;
 let timerDuration = questionTime;
 
 
@@ -24,26 +30,29 @@ document.addEventListener("DOMContentLoaded", function() {
     // code...
     startGameButton.addEventListener('click', function() {
         if(!gameStarted) {
-            loadQuestionsJson();
+            parameterSelection.classList.add('hidden');
+            endGameDisplay.classList.add('hidden');
+            scoreElement.classList.add('hidden'); 
+            loadQuestionsJson(difficultySelector.value, categorySelector.value);
             gameStarted = true;
-            startGameButton.classList.add('hidden');
         }
     });
-
-
 });
 
-function loadQuestionsJson() {
+function loadQuestionsJson(difficulty, category) {
     var xhr = new XMLHttpRequest();
-    var url = 'https://opentdb.com/api.php?amount=10&type=multiple';
-    
+    var url = 'https://opentdb.com/api.php?amount=10&type=multiple&difficulty=' + difficulty;
+
+    if(category != 0) {
+        url += '&category=' + category;
+    }
+    console.log(url);
 
     xhr.onreadystatechange = function() {
         if(xhr.readyState === XMLHttpRequest.DONE) {
             if (xhr.status === 200) {
                 questions = getQuestionsFromJson(xhr.response);
                 questionsRemaining = questions.length;
-                questionsLeftText.textContent = questionsRemaining;
                 startGame();
             }
             else if(xhr.status === 400) {
@@ -53,6 +62,29 @@ function loadQuestionsJson() {
     }
 
     
+    xhr.open('GET', url);
+    xhr.responseType = "text";
+    xhr.send();
+}
+
+function loadGifJson(search) {
+    var xhr = new XMLHttpRequest();
+    var url = 'https://api.giphy.com/v1/gifs/random?tag=' + search + '&api_key=dc6zaTOxFJmzC';
+    console.log(url);
+    
+
+    xhr.onreadystatechange = function() {
+        if(xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                let gif = JSON.parse(xhr.response);
+                addGifToScreen(gif.data.images.original.url);
+            }
+            else if(xhr.status === 400) {
+                console.error('failed api request');
+            }
+        }
+    }
+
     xhr.open('GET', url);
     xhr.responseType = "text";
     xhr.send();
@@ -73,57 +105,91 @@ function startGame() {
 
 function answerChosen(answer) {
     questionsRemaining--;
-    questionsLeftText.textContent = questionsRemaining;
+    clearTimer();
     if (answer.id === 'correct-answer') {
         correctAnswers++;
         correctAnswersText.textContent = correctAnswers;
+        showAnswerResults(true);
     }
     else {
         wrongAnswers++;
         wrongAnswersText.textContent = wrongAnswers;
+        showAnswerResults(false);
+    }  
+}
+
+function showAnswerResults(isCorrect, isTimeout) {
+    gameDisplay.removeChild(document.getElementById('question-display'));
+    userCorrectDisplay.innerHTML = '';
+    userCorrectDisplay.classList.remove('hidden');
+    let message = document.createElement('h3');
+    let questionsLeft = document.createElement('h5');
+    questionsLeft.textContent = 'There are ' + questionsRemaining + ' questions remaining.';
+    if(isCorrect) {
+        message.textContent = 'Correct!';
+        userCorrectDisplay.appendChild(message);
+        userCorrectDisplay.appendChild(questionsLeft);
+        loadGifJson('good+job');
+    } else {
+        if(isTimeout) {
+            message.textContent = 'Sorry, you ran out of time! The correct answer was ' + currentCorrectAnswer + '.';
+            userCorrectDisplay.appendChild(message);
+            userCorrectDisplay.appendChild(questionsLeft);
+            loadGifJson('times+up');
+        } else {
+            message.textContent = 'Sorry, the correct answer was ' + currentCorrectAnswer + '.';
+            userCorrectDisplay.appendChild(message);
+            userCorrectDisplay.appendChild(questionsLeft);
+            loadGifJson('better+luck+next+time');
+        }
+        
     }
 
-    clearTimer();
-    
+    setTimeout(function() {
+        userCorrectDisplay.classList.add('hidden');
+        getNextQuestion();
+    }, 5 * 1000);
+}
+
+function addGifToScreen(gifUrl) {
+    let gif = document.createElement('img');
+    gif.setAttribute('src', gifUrl);
+    userCorrectDisplay.appendChild(gif);
 }
 
 function endGame() {
-    let endGame = document.createElement('div');
+    endGameDisplay.classList.remove('hidden');
 
-    endGame.innerHTML = '<h2>Game Over!</h2>';
-    endGame.innerHTML += '<p> You got a score of ' + (correctAnswers/10 * 100) + '%';
-    gameDisplay.removeChild(document.getElementById('question-display'));
-    gameDisplay.prepend(endGame);
+    endGameDisplay.innerHTML = '<h2>Game Over!</h2>';
+    endGameDisplay.innerHTML += '<p> You got a score of ' + (correctAnswers/10 * 100) + '%';
     gameStarted = false;
     startGameButton.textContent = 'Start Over'
-    startGameButton.classList.remove('hidden');
-    scoreElement.classList.remove('hidden');
+    parameterSelection.classList.remove('hidden');
+    scoreElement.classList.remove('hidden');``
     correctAnswers = 0;
     wrongAnswers = 0;
 }
 
 function reduceTimer() {
-    const timerText = document.getElementById('timer');
     timerDuration--;
+    const timerText = document.getElementById('timer');
     timerText.textContent = timerDuration;
 
     if(timerDuration <= 0) {
         questionsRemaining--;
-        questionsLeftText.textContent = questionsRemaining;
         questionsUnanswered++;
         questionsUnansweredText.textContent = questionsUnanswered;
         clearTimer();
+        showAnswerResults(false, true);
     }
 }
 
 function clearTimer() {
     clearInterval(questionTimer);
-    getNextQuestion();
 }
 
 function getNextQuestion() {
     if(questions[0]) {
-        gameDisplay.removeChild(document.getElementById('question-display'));
         displayQuestion(questions[0]);
         questions.splice(0,1);
     } else {
@@ -132,6 +198,8 @@ function getNextQuestion() {
 }
 
 function displayQuestion(question) {
+    let decoder = document.createElement('textarea');
+
     let questionDiv = document.createElement('div');
     questionDiv.setAttribute('id', 'question-display');
 
@@ -145,7 +213,8 @@ function displayQuestion(question) {
 
     let questionPrompt  = document.createElement('h3');
     questionPrompt.classList.add('prompt');
-    questionPrompt.textContent = question.question;
+    decoder.innerHTML = question.question;
+    questionPrompt.textContent = decoder.value;
     questionDiv.appendChild(questionPrompt);
 
     let possibleQuestions = [];
@@ -155,6 +224,7 @@ function displayQuestion(question) {
         }
         else {
             possibleQuestions.push({correct: true, answer: question.correct_answer});
+            currentCorrectAnswer = question.correct_answer;
         }
     }
 
@@ -166,13 +236,12 @@ function displayQuestion(question) {
         let randomIndex = Math.floor(Math.random() * possibleQuestions.length);
         let randomAnswer = possibleQuestions[randomIndex];
         if(randomAnswer.correct) {
-            console.log('correct answer: ' + correctAnswerTracker);
             possibleAnswer.setAttribute('id', 'correct-answer');
         }
         possibleQuestions.splice(randomIndex, 1);
 
-        
-        possibleAnswer.textContent = randomAnswer.answer;
+        decoder.innerHTML = randomAnswer.answer;
+        possibleAnswer.textContent = decoder.value;
         possibleAnswer.addEventListener('click', () => {
             answerChosen(possibleAnswer);
         });
