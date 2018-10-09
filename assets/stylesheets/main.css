@@ -46,7 +46,8 @@ body {
     margin-bottom: 5rem;
 }
 
-#game-display * {
+
+.game-display * {
     max-width: 960px;
 }
 
@@ -59,20 +60,31 @@ body {
     min-width: 320px;
 }
 
+.user-correct {
+    height: 100%;
+}
+
 .user-correct h3 {
     margin-bottom: 1.5rem;
 }
 
 .user-correct img {
-    max-width: 360px;
+    min-width: 240px;
+    width: auto;
+    max-width: 320px;
+    min-width: 240px;
     height: auto;
-    max-height: 460px;
+    max-height: 320px;
     object-fit: contain;
 }
 
 .prompt {
     text-align: justify;
     margin: 1.5rem 0;
+}
+
+#user-correct h3 {
+    text-align: justify;
 }
 
 #timer {
@@ -113,6 +125,7 @@ body {
     display: flex;
     flex-flow: row nowrap;
     justify-content: space-between;
+    align-items: center;
     width: 100%;
 }
 
@@ -143,6 +156,21 @@ button:hover {
     display: none;
 }
 
+
+@media only screen and (max-width: 600px) {
+    #game-display {
+        padding: 1rem;
+    }
+
+    .user-correct img {
+        max-width: 240px;
+        max-height: 240px;
+    }
+
+    #timer {
+        padding-top: .5rem;
+    }
+}
 
 /*
 =============================================
