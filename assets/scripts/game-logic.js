@@ -24,6 +24,8 @@ let questionTimer;
 const questionTime = 15;
 let timerDuration = questionTime;
 
+let sessionToken;
+
 
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -33,27 +35,54 @@ document.addEventListener("DOMContentLoaded", function() {
             parameterSelection.classList.add('hidden');
             endGameDisplay.classList.add('hidden');
             scoreElement.classList.add('hidden'); 
-            loadQuestionsJson(difficultySelector.value, categorySelector.value);
+            getQeustions(difficultySelector.value, categorySelector.value);
             gameStarted = true;
         }
     });
 });
 
-function loadQuestionsJson(difficulty, category) {
+function getQeustions(difficulty, category) {
     var xhr = new XMLHttpRequest();
     var url = 'https://opentdb.com/api.php?amount=10&type=multiple&difficulty=' + difficulty;
 
     if(category != 0) {
         url += '&category=' + category;
     }
+
+    if(sessionToken) {
+        url += '&token=' + sessionToken;
+    }
     console.log(url);
 
     xhr.onreadystatechange = function() {
         if(xhr.readyState === XMLHttpRequest.DONE) {
             if (xhr.status === 200) {
+                if(!sessionToken) getSessionToken();
                 questions = getQuestionsFromJson(xhr.response);
                 questionsRemaining = questions.length;
                 startGame();
+            }
+            else if(xhr.status === 400) {
+                console.error('failed api request');
+            }
+        }
+    }
+
+    
+    xhr.open('GET', url);
+    xhr.responseType = "text";
+    xhr.send();
+}
+
+function getSessionToken() {
+    var xhr = new XMLHttpRequest();
+    var url = 'https://opentdb.com/api_token.php?command=request';
+    console.log(url);
+
+    xhr.onreadystatechange = function() {
+        if(xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                sessionToken = JSON.parse(xhr.response).token;
             }
             else if(xhr.status === 400) {
                 console.error('failed api request');
