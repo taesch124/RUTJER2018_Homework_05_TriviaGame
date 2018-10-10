@@ -21,12 +21,10 @@ questionsRemaining = 0;
 let currentCorrectAnswer;
 let gameStarted = false;
 let questionTimer;
-const questionTime = 15;
+const questionTime = 20;
 let timerDuration = questionTime;
 
 let sessionToken;
-
-
 
 document.addEventListener("DOMContentLoaded", function() {
     // code...
@@ -34,14 +32,15 @@ document.addEventListener("DOMContentLoaded", function() {
         if(!gameStarted) {
             parameterSelection.classList.add('hidden');
             endGameDisplay.classList.add('hidden');
-            scoreElement.classList.add('hidden'); 
-            getQeustions(difficultySelector.value, categorySelector.value);
+            scoreElement.classList.add('hidden');
+            getSessionToken();
+            
             gameStarted = true;
         }
     });
 });
 
-function getQeustions(difficulty, category) {
+function getQuestions(difficulty, category, sessionToken) {
     var xhr = new XMLHttpRequest();
     var url = 'https://opentdb.com/api.php?amount=10&type=multiple&difficulty=' + difficulty;
 
@@ -81,10 +80,12 @@ function getSessionToken() {
 
     xhr.onreadystatechange = function() {
         if(xhr.readyState === XMLHttpRequest.DONE) {
-            if (xhr.status === 200) {
+            if (xhr.status === 200 && !sessionToken) {
                 sessionToken = JSON.parse(xhr.response).token;
-            }
-            else if(xhr.status === 400) {
+                getQuestions(difficultySelector.value, categorySelector.value, sessionToken);
+            } else if (xhr.status === 200 && sessionToken) {
+                getQuestions(difficultySelector.value, categorySelector.value, sessionToken);
+            } else if(xhr.status === 400) {
                 console.error('failed api request');
             }
         }
@@ -96,10 +97,9 @@ function getSessionToken() {
     xhr.send();
 }
 
-function loadGifJson(search) {
+function loadGif(search) {
     var xhr = new XMLHttpRequest();
     var url = 'https://api.giphy.com/v1/gifs/random?tag=' + search + '&api_key=dc6zaTOxFJmzC';
-    console.log(url);
     
 
     xhr.onreadystatechange = function() {
@@ -158,18 +158,20 @@ function showAnswerResults(isCorrect, isTimeout) {
         message.textContent = 'Correct!';
         userCorrectDisplay.appendChild(message);
         userCorrectDisplay.appendChild(questionsLeft);
-        loadGifJson('good+job');
+        loadGif('good+job');
     } else {
+        let decoder = document.createElement('textarea');
+        decoder.innerHTML = currentCorrectAnswer;
         if(isTimeout) {
-            message.textContent = 'Sorry, you ran out of time! The correct answer was ' + currentCorrectAnswer + '.';
+            message.textContent = 'Sorry, you ran out of time! The correct answer was ' + decoder.value + '.';
             userCorrectDisplay.appendChild(message);
             userCorrectDisplay.appendChild(questionsLeft);
-            loadGifJson('times+up');
+            loadGif('times+up');
         } else {
-            message.textContent = 'Sorry, the correct answer was ' + currentCorrectAnswer + '.';
+            message.textContent = 'Sorry, the correct answer was ' + decoder.value + '.';
             userCorrectDisplay.appendChild(message);
             userCorrectDisplay.appendChild(questionsLeft);
-            loadGifJson('better+luck+next+time');
+            loadGif('oops');
         }
         
     }
@@ -194,7 +196,7 @@ function endGame() {
     gameStarted = false;
     startGameButton.textContent = 'Start Over'
     parameterSelection.classList.remove('hidden');
-    scoreElement.classList.remove('hidden');``
+    scoreElement.classList.remove('hidden');
     correctAnswers = 0;
     wrongAnswers = 0;
 }
@@ -257,7 +259,6 @@ function displayQuestion(question) {
         }
     }
 
-    let correctAnswerTracker = 0;
     while(possibleQuestions.length > 0) {
         let possibleAnswer = document.createElement('p');
         possibleAnswer.classList.add('answer');
@@ -275,7 +276,6 @@ function displayQuestion(question) {
             answerChosen(possibleAnswer);
         });
         questionDiv.appendChild(possibleAnswer);
-        correctAnswerTracker++;
     }
     
     gameDisplay.appendChild(questionDiv);
